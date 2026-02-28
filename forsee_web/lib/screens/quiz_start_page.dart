@@ -24,6 +24,466 @@ class QuizStartPage extends StatelessWidget {
   }
 }
 
+// ─── Quiz Question Screen ─────────────────────────────────────────────────────
+
+class QuizQuestionScreen extends StatefulWidget {
+  final QuizCategory category;
+  final List<QuizQuestion> questions;
+
+  const QuizQuestionScreen({
+    super.key,
+    required this.category,
+    required this.questions,
+  });
+
+  @override
+  State<QuizQuestionScreen> createState() => _QuizQuestionScreenState();
+}
+
+class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
+  int _currentIndex = 0;
+  List<int?> _answers = [];
+  bool _isFinished = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _answers = List.filled(widget.questions.length, null);
+  }
+
+  int get _totalScore {
+    int score = 0;
+    for (int i = 0; i < _answers.length; i++) {
+      if (_answers[i] != null) {
+        score += widget.questions[i].scores[_answers[i]!];
+      }
+    }
+    return score;
+  }
+
+  void _nextQuestion() {
+    if (_currentIndex < widget.questions.length - 1) {
+      setState(() => _currentIndex++);
+    } else {
+      setState(() => _isFinished = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isFinished) {
+      return _buildResults();
+    }
+
+    final question = widget.questions[_currentIndex];
+    final progress = (_currentIndex + 1) / widget.questions.length;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF2D1A20),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              widget.category.color.withOpacity(0.2),
+              const Color(0xFF2D1A20),
+              const Color(0xFF1A1014),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildTopNav(),
+              const SizedBox(height: 20),
+              // Progress Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Question ${_currentIndex + 1} of ${widget.questions.length}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${(progress * 100).toInt()}%',
+                          style: TextStyle(
+                            color: widget.category.color,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Stack(
+                      children: [
+                        Container(
+                          height: 6,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 600),
+                          curve: Curves.easeOutCubic,
+                          height: 6,
+                          width: MediaQuery.of(context).size.width * (0.8 * progress),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [widget.category.color, widget.category.color.withOpacity(0.6)],
+                            ),
+                            borderRadius: BorderRadius.circular(3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: widget.category.color.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              // Question Card
+              _buildQuestionCard(question),
+              const Spacer(flex: 2),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopNav() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withOpacity(0.05),
+              padding: const EdgeInsets.all(12),
+            ),
+          ),
+          const SizedBox(width: 20),
+          Text(
+            widget.category.title.replaceAll('\n', ' '),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard(QuizQuestion question) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWide = constraints.maxWidth > 800;
+      return Container(
+        width: 800,
+        margin: EdgeInsets.symmetric(horizontal: isWide ? 40 : 20),
+        padding: EdgeInsets.all(isWide ? 40 : 24),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              question.text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isWide ? 28 : 20,
+                fontWeight: FontWeight.w300,
+                height: 1.4,
+                fontFamily: 'serif',
+              ),
+            ),
+            const SizedBox(height: 48),
+            ...List.generate(question.options.length, (index) {
+              final isSelected = _answers[_currentIndex] == index;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _OptionButton(
+                  text: question.options[index],
+                  isSelected: isSelected,
+                  color: widget.category.color,
+                  onTap: () {
+                    setState(() => _answers[_currentIndex] = index);
+                    Future.delayed(const Duration(milliseconds: 300), _nextQuestion);
+                  },
+                ),
+              );
+            }),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildResults() {
+    final score = _totalScore;
+    final severity = QuizData.getSeverity(widget.category.title, score);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF1A1014),
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [
+              widget.category.color.withOpacity(0.15),
+              const Color(0xFF1A1014),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Success Icon
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: widget.category.color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: widget.category.color.withOpacity(0.3), width: 2),
+                ),
+                child: Icon(Icons.check_circle_outline, color: widget.category.color, size: 60),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                'Quiz Completed',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '${widget.category.title.replaceAll('\n', ' ')} Screening',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 60),
+              // Score Circle
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: widget.category.color.withOpacity(0.1), width: 12),
+                    ),
+                  ),
+                  TweenAnimationBuilder<double>(
+                    duration: const Duration(seconds: 2),
+                    tween: Tween(begin: 0, end: score.toDouble()),
+                    builder: (context, value, _) => Column(
+                      children: [
+                        Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 72,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -2,
+                          ),
+                        ),
+                        Text(
+                          'TOTAL SCORE',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.4),
+                            fontSize: 12,
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 48),
+              // Severity Label
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                decoration: BoxDecoration(
+                  color: widget.category.color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(40),
+                  border: Border.all(color: widget.category.color.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Result: ',
+                      style: TextStyle(color: Colors.white70, fontSize: 18),
+                    ),
+                    Text(
+                      severity,
+                      style: TextStyle(
+                        color: widget.category.color,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 80),
+              // Return Button
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  width: 240,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  decoration: BoxDecoration(
+                    color: widget.category.color,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.category.color.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Back to Dashboard',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OptionButton extends StatefulWidget {
+  final String text;
+  final bool isSelected;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _OptionButton({
+    required this.text,
+    required this.isSelected,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  State<_OptionButton> createState() => _OptionButtonState();
+}
+
+class _OptionButtonState extends State<_OptionButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? widget.color
+                : _hovered
+                    ? Colors.white.withOpacity(0.08)
+                    : Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: widget.isSelected
+                  ? widget.color
+                  : _hovered
+                      ? Colors.white.withOpacity(0.2)
+                      : Colors.white.withOpacity(0.08),
+            ),
+          ),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: widget.isSelected ? Colors.white : Colors.white24,
+                    width: 2,
+                  ),
+                  color: widget.isSelected ? Colors.white : Colors.transparent,
+                ),
+                child: widget.isSelected
+                    ? Icon(Icons.check, size: 16, color: widget.color)
+                    : null,
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Text(
+                  widget.text,
+                  style: TextStyle(
+                    color: widget.isSelected ? Colors.white : Colors.white.withOpacity(0.7),
+                    fontSize: 18,
+                    fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class QuizCategory {
   final String title;
   final String subtitle;
@@ -36,6 +496,198 @@ class QuizCategory {
     required this.icon,
     required this.color,
   });
+}
+
+class QuizQuestion {
+  final String text;
+  final List<String> options;
+  final List<int> scores;
+
+  const QuizQuestion({
+    required this.text,
+    required this.options,
+    required this.scores,
+  });
+}
+
+class QuizData {
+  static const List<QuizQuestion> anxietyQuestions = [
+    QuizQuestion(
+      text: "Feeling nervous, anxious, or on edge?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Not being able to stop or control worrying?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Worrying too much about different things?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Trouble relaxing?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Being so restless that it is hard to sit still?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Becoming easily annoyed or irritable?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Feeling afraid, as if something awful might happen?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+  ];
+
+  static const List<QuizQuestion> adhdQuestions = [
+    QuizQuestion(
+      text: "How often do you have trouble wrapping up the final details of a project once the challenging parts have been done?",
+      options: ["Never", "Rarely", "Sometimes", "Often", "Very Often"],
+      scores: [0, 1, 2, 3, 4],
+    ),
+    QuizQuestion(
+      text: "How often do you have difficulty getting things in order when you have to do a task that requires organization?",
+      options: ["Never", "Rarely", "Sometimes", "Often", "Very Often"],
+      scores: [0, 1, 2, 3, 4],
+    ),
+    QuizQuestion(
+      text: "How often do you have problems remembering appointments or obligations?",
+      options: ["Never", "Rarely", "Sometimes", "Often", "Very Often"],
+      scores: [0, 1, 2, 3, 4],
+    ),
+    QuizQuestion(
+      text: "When you have a task that requires a lot of thought, how often do you avoid or delay getting started?",
+      options: ["Never", "Rarely", "Sometimes", "Often", "Very Often"],
+      scores: [0, 1, 2, 3, 4],
+    ),
+    QuizQuestion(
+      text: "How often do you fidget or squirm with your hands or feet when you have to sit down for a long time?",
+      options: ["Never", "Rarely", "Sometimes", "Often", "Very Often"],
+      scores: [0, 1, 2, 3, 4],
+    ),
+    QuizQuestion(
+      text: "How often do you feel overly active and compelled to do things, as if you were driven by a motor?",
+      options: ["Never", "Rarely", "Sometimes", "Often", "Very Often"],
+      scores: [0, 1, 2, 3, 4],
+    ),
+  ];
+
+  static const List<QuizQuestion> dyslexiaQuestions = [
+    QuizQuestion(
+      text: "Do you find yourself reading the same paragraph multiple times to understand it?",
+      options: ["No", "Occasionally", "Frequently", "Always"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Do you feel more comfortable expressing your ideas out loud than writing them down?",
+      options: ["No", "Occasionally", "Frequently", "Always"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Do you find it difficult to tell \"left\" from \"right\" quickly or follow multi-step directions?",
+      options: ["No", "Occasionally", "Frequently", "Always"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Do you struggle with spelling, even for common words, or rely heavily on spell-check?",
+      options: ["No", "Occasionally", "Frequently", "Always"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "Do you find it exhausting to read for long periods of time?",
+      options: ["No", "Occasionally", "Frequently", "Always"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "When reading aloud, do you skip over words or lose your place on the page?",
+      options: ["No", "Occasionally", "Frequently", "Always"],
+      scores: [0, 1, 2, 3],
+    ),
+  ];
+
+  static const List<QuizQuestion> depressionQuestions = [
+    QuizQuestion(
+      text: "How often have you felt physically heavy, as if your limbs are weighted down, making simple movements feel like a chore?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "How often have you struggled to make even tiny decisions (like what to eat or what to wear) because they felt overwhelming?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "How often have you avoided answering texts, calls, or invitations—not because you were busy, but because you didn't have the \"energy\" to interact?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "How often have you felt \"numb\" or disconnected from your surroundings, as if you are watching your life happen from behind a pane of glass?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "How often have you felt uncharacteristically angry or frustrated by minor inconveniences that normally wouldn't bother you?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "How often has the future felt like a \"blank wall\" or a \"fog,\" where you find it impossible to imagine things getting better or feeling excited about upcoming events?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+    QuizQuestion(
+      text: "How often have you skipped basic hygiene (showering, brushing teeth, tidying your space) because it felt like too much effort?",
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
+      scores: [0, 1, 2, 3],
+    ),
+  ];
+
+  static List<QuizQuestion> getQuestionsForCategory(String title) {
+    if (title.contains('Worry')) return anxietyQuestions;
+    if (title.contains('Focus')) return adhdQuestions;
+    if (title.contains('Reading')) return dyslexiaQuestions;
+    if (title.contains('Mood')) return depressionQuestions;
+    return anxietyQuestions;
+  }
+
+  static String getSeverity(String category, int score) {
+    if (category.contains('Worry')) { // GAD-7
+      if (score <= 4) return "Minimal";
+      if (score <= 9) return "Mild";
+      if (score <= 14) return "Moderate";
+      return "Severe";
+    }
+    if (category.contains('Focus')) { // ASRS
+      if (score <= 9) return "Low";
+      if (score <= 13) return "Mild to Moderate";
+      if (score <= 17) return "High";
+      return "Very High";
+    }
+    if (category.contains('Reading')) { // Dyslexia
+      if (score <= 5) return "Low Probability";
+      if (score <= 10) return "Moderate Probability";
+      return "High Probability";
+    }
+    if (category.contains('Mood')) { // Depression
+      if (score <= 4) return "Minimal";
+      if (score <= 9) return "Mild";
+      if (score <= 14) return "Moderate";
+      if (score <= 19) return "Moderately Severe";
+      return "Severe";
+    }
+    return "Neutral";
+  }
 }
 
 class QuizStartScreen extends StatefulWidget {
@@ -76,7 +728,7 @@ class _QuizStartScreenState extends State<QuizStartScreen>
     ),
     QuizCategory(
       title: 'Worry &\nStress',
-      subtitle: 'ADHD Patterns',
+      subtitle: 'Anxiety Patterns',
       icon: Icons.favorite_border,
       color: Color(0xFF6B4A54),
     ),
@@ -541,12 +1193,14 @@ class _QuizStartScreenState extends State<QuizStartScreen>
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Starting: ${category.title.replaceAll('\n', ' ')}'),
-              backgroundColor: category.color,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          final qList = QuizData.getQuestionsForCategory(category.title);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => QuizQuestionScreen(
+                category: category,
+                questions: qList,
+              ),
             ),
           );
         },
