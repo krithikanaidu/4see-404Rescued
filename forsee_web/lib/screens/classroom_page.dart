@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'student_pfp_page.dart';
+import 'teacher_dashboard.dart';
 
 void main() {
   runApp(const ForseeWebApp());
@@ -34,7 +35,7 @@ class WebClassroomPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildWebHeader(),
+            _buildWebHeader(context),
             const SizedBox(height: 40),
 
             Center(
@@ -108,7 +109,7 @@ class WebClassroomPage extends StatelessWidget {
 
   // ---------------- HEADER ----------------
 
-  Widget _buildWebHeader() {
+  Widget _buildWebHeader(BuildContext context) {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -122,56 +123,112 @@ class WebClassroomPage extends StatelessWidget {
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: contentMaxWidth),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Science',
-                    style: TextStyle(
-                      fontSize: 64,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── BACK BUTTON ──
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const TeacherDashboard(),
+                      transitionDuration: const Duration(milliseconds: 350),
+                      transitionsBuilder: (_, anim, __, child) => FadeTransition(
+                        opacity: anim,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(-0.06, 0),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
+                          child: child,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 14),
+                        SizedBox(width: 8),
+                        Text(
+                          'Dashboard',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Semester II',
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+                ),
               ),
-              Column(
+              // ─────────────────
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'STD 5th',
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: textColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Row(
+                children: const [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'No. of Participants ',
-                        style: TextStyle(fontSize: 24, color: textColor),
-                      ),
-                      Text(
-                        '24',
+                        'Science',
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 64,
                           fontWeight: FontWeight.bold,
-                          color: textColor,
+                          color: Colors.white,
                         ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Semester II',
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'STD 5th',
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: textColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Text(
+                            'No. of Participants ',
+                            style: TextStyle(fontSize: 24, color: textColor),
+                          ),
+                          Text(
+                            '24',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -248,8 +305,7 @@ class WebClassroomPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.account_circle_outlined,
-              color: textColor, size: 28),
+          const Icon(Icons.account_circle_outlined, color: textColor, size: 28),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
@@ -262,7 +318,7 @@ class WebClassroomPage extends StatelessWidget {
             ),
           ),
 
-          // 🔥 NAVIGATION ON ARROW CLICK
+          // 🔥 NAVIGATION ON ARROW CLICK — preserved as-is
           InkWell(
             onTap: () {
               Navigator.push(
