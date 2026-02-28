@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'report_page.dart';
 import 'student_profile_page.dart';
 
 void main() {
@@ -6,7 +7,8 @@ void main() {
 }
 
 class QuizStartPage extends StatelessWidget {
-  const QuizStartPage({super.key});
+  final bool showSidebar;
+  const QuizStartPage({super.key, this.showSidebar = true});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +19,7 @@ class QuizStartPage extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Georgia',
       ),
-      home: const QuizStartScreen(),
+      home: QuizStartScreen(showSidebar: showSidebar),
     );
   }
 }
@@ -37,7 +39,8 @@ class QuizCategory {
 }
 
 class QuizStartScreen extends StatefulWidget {
-  const QuizStartScreen({super.key});
+  final bool showSidebar;
+  const QuizStartScreen({super.key, this.showSidebar = true});
 
   @override
   State<QuizStartScreen> createState() => _QuizStartScreenState();
@@ -50,7 +53,7 @@ class _QuizStartScreenState extends State<QuizStartScreen>
   late List<AnimationController> _cardControllers;
 
   int _hoveredIndex = -1;
-  int _selectedNav = 0;
+  int _selectedNav = 2; // Default to Mind & Mood
 
   final List<QuizCategory> categories = const [
     QuizCategory(
@@ -117,30 +120,6 @@ class _QuizStartScreenState extends State<QuizStartScreen>
     super.dispose();
   }
 
-  void _goToStudentProfile() {
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, animation, __) => const StudentProfilePage(),
-        transitionsBuilder: (_, animation, __, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(-0.08, 0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOut),
-              ),
-              child: child,
-            ),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 350),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -151,7 +130,8 @@ class _QuizStartScreenState extends State<QuizStartScreen>
       body: Row(
         children: [
           // Sidebar Navigation
-          _buildSidebar(),
+          if (widget.showSidebar)
+            _buildSidebar(),
 
           // Main Content
           Expanded(
@@ -181,10 +161,6 @@ class _QuizStartScreenState extends State<QuizStartScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // ── Back Button ──────────────────────────────
-                            _buildBackButton(),
-                            const SizedBox(height: 28),
-                            // ─────────────────────────────────────────────
                             _buildHeader(),
                             const SizedBox(height: 40),
                             _buildInfoCard(),
@@ -205,77 +181,15 @@ class _QuizStartScreenState extends State<QuizStartScreen>
     );
   }
 
-  Widget _buildBackButton() {
-    bool _backHovered = false;
-
-    return StatefulBuilder(
-      builder: (context, setLocalState) {
-        return MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setLocalState(() => _backHovered = true),
-          onExit: (_) => setLocalState(() => _backHovered = false),
-          child: GestureDetector(
-            onTap: _goToStudentProfile,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: _backHovered
-                    ? const Color(0xFF8B5E6B).withOpacity(0.2)
-                    : const Color(0xFF8B5E6B).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _backHovered
-                      ? const Color(0xFF8B5E6B).withOpacity(0.6)
-                      : const Color(0xFF8B5E6B).withOpacity(0.25),
-                  width: 1.5,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedSlide(
-                    offset: _backHovered
-                        ? const Offset(-0.15, 0)
-                        : Offset.zero,
-                    duration: const Duration(milliseconds: 200),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Color(0xFFD4A0AE),
-                      size: 15,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Student Profile',
-                    style: TextStyle(
-                      color: _backHovered
-                          ? const Color(0xFFE8C8D0)
-                          : const Color(0xFFD4A0AE),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildSidebar() {
     final navItems = [
-      Icons.home_rounded,
-      Icons.swap_horiz_rounded,
-      Icons.school_rounded,
-      Icons.settings_rounded,
+      {'icon': Icons.person_outline_rounded, 'label': 'My Profile'},
+      {'icon': Icons.bar_chart_rounded,       'label': 'Report'},
+      {'icon': Icons.psychology_outlined,     'label': 'My Mind & Mood'},
     ];
 
     return Container(
-      width: 80,
+      width: 220,
       decoration: BoxDecoration(
         color: const Color(0xFF1E1015),
         boxShadow: [
@@ -287,65 +201,122 @@ class _QuizStartScreenState extends State<QuizStartScreen>
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 32),
           // Logo
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFF8B5E6B),
-              borderRadius: BorderRadius.circular(14),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5E6B),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.psychology, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  '4see',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
             ),
-            child: const Icon(Icons.psychology, color: Colors.white, size: 24),
           ),
           const SizedBox(height: 48),
           ...navItems.asMap().entries.map((entry) {
             final i = entry.key;
-            final icon = entry.value;
+            final item = entry.value as Map<String, dynamic>;
+            final icon = item['icon'] as IconData;
+            final label = item['label'] as String;
             final isSelected = _selectedNav == i;
             return GestureDetector(
-              onTap: () => setState(() => _selectedNav = i),
+              onTap: () {
+                if (isSelected) return;
+                if (i == 0) {
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const StudentProfilePage()));
+                } else if (i == 1) {
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ReportPage()));
+                } else {
+                  setState(() => _selectedNav = i);
+                }
+              },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                width: 48,
-                height: 48,
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFF8B5E6B).withOpacity(0.3)
+                      ? const Color(0xFF8B5E6B).withOpacity(0.2)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: isSelected
-                      ? Border.all(color: const Color(0xFF8B5E6B), width: 1.5)
+                      ? Border.all(color: const Color(0xFF8B5E6B).withOpacity(0.4))
                       : null,
                 ),
-                child: Icon(
-                  icon,
-                  color: isSelected
-                      ? const Color(0xFFD4A0AE)
-                      : Colors.white.withOpacity(0.3),
-                  size: 22,
+                child: Row(
+                  children: [
+                    Icon(
+                      icon,
+                      color: isSelected
+                          ? const Color(0xFFD4A0AE)
+                          : Colors.white.withOpacity(0.3),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: isSelected
+                            ? const Color(0xFFD4A0AE)
+                            : Colors.white.withOpacity(0.3),
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
           }),
           const Spacer(),
-          // Profile
+          // Profile Widget
           Container(
-            width: 40,
-            height: 40,
-            margin: const EdgeInsets.only(bottom: 28),
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF5A3540),
-              border: Border.all(
-                color: const Color(0xFF8B5E6B),
-                width: 2,
-              ),
+              color: Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.06)),
             ),
-            child: const Icon(Icons.person, color: Color(0xFFD4A0AE), size: 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF5A3540)),
+                  child: const Center(child: Text('RS', style: TextStyle(color: Color(0xFFD4A0AE), fontWeight: FontWeight.bold, fontSize: 10))),
+                ),
+                const SizedBox(width: 10),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Rohan Sharma', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text('Class X A', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                  ],
+                ),
+              ],
+            ),
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -575,8 +546,7 @@ class _QuizStartScreenState extends State<QuizStartScreen>
               content: Text('Starting: ${category.title.replaceAll('\n', ' ')}'),
               backgroundColor: category.color,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           );
         },
@@ -603,8 +573,7 @@ class _QuizStartScreenState extends State<QuizStartScreen>
             ),
             boxShadow: [
               BoxShadow(
-                color:
-                    category.color.withOpacity(isHovered ? 0.5 : 0.2),
+                color: category.color.withOpacity(isHovered ? 0.5 : 0.2),
                 blurRadius: isHovered ? 30 : 15,
                 offset: const Offset(0, 8),
               ),
@@ -624,7 +593,11 @@ class _QuizStartScreenState extends State<QuizStartScreen>
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(category.icon, color: Colors.white, size: 28),
+                  child: Icon(
+                    category.icon,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
 
                 // Text
@@ -644,7 +617,9 @@ class _QuizStartScreenState extends State<QuizStartScreen>
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
@@ -662,24 +637,26 @@ class _QuizStartScreenState extends State<QuizStartScreen>
                 ),
 
                 // Arrow
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.white
-                            .withOpacity(isHovered ? 0.3 : 0.15),
-                        borderRadius: BorderRadius.circular(10),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(isHovered ? 0.3 : 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white.withOpacity(0.9),
+                          size: 18,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.arrow_forward_rounded,
-                        color: Colors.white.withOpacity(0.9),
-                        size: 18,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

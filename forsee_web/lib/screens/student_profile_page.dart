@@ -90,25 +90,13 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   Widget _buildPage() {
     switch (_navIndex) {
       case 0:
-        return _ProfileContent(slideCtrl: _slideCtrl);
+        return _ProfileContent(slideCtrl: _slideCtrl, onNavigate: _navigate);
       case 1:
-        // In your real project replace with: return const ReportPage();
-        return _PlaceholderPage(
-          icon: Icons.bar_chart_rounded,
-          title: 'Report',
-          subtitle: 'Connected to report_page.dart',
-          color: _rose,
-        );
+        return const ReportPage(showSidebar: false);
       case 2:
-        // In your real project replace with: return const QuizStartScreen();
-        return _PlaceholderPage(
-          icon: Icons.psychology_outlined,
-          title: 'My Mind & Mood',
-          subtitle: 'Connected to quiz_start_page.dart',
-          color: _teal,
-        );
+        return const QuizStartScreen(showSidebar: false);
       default:
-        return _ProfileContent(slideCtrl: _slideCtrl);
+        return _ProfileContent(slideCtrl: _slideCtrl, onNavigate: _navigate);
     }
   }
 }
@@ -245,7 +233,8 @@ class _NavItemState extends State<_NavItem> {
 // ─── Profile Content ──────────────────────────────────────────────────────────
 class _ProfileContent extends StatelessWidget {
   final AnimationController slideCtrl;
-  const _ProfileContent({required this.slideCtrl});
+  final ValueChanged<int> onNavigate;
+  const _ProfileContent({required this.slideCtrl, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -289,17 +278,17 @@ class _ProfileContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Left: profile card
-                    SizedBox(width: 280, child: _ProfileCard(slideCtrl: slideCtrl)),
+                    SizedBox(width: 280, child: _ProfileCard(slideCtrl: slideCtrl, onNavigate: onNavigate)),
                     const SizedBox(width: 28),
                     // Right: info + stats
-                    Expanded(child: _InfoColumn(slideCtrl: slideCtrl)),
+                    Expanded(child: _InfoColumn(slideCtrl: slideCtrl, onNavigate: onNavigate)),
                   ],
                 )
               else
                 Column(children: [
-                  _ProfileCard(slideCtrl: slideCtrl),
+                  _ProfileCard(slideCtrl: slideCtrl, onNavigate: onNavigate),
                   const SizedBox(height: 24),
-                  _InfoColumn(slideCtrl: slideCtrl),
+                  _InfoColumn(slideCtrl: slideCtrl, onNavigate: onNavigate),
                 ]),
             ],
           );
@@ -334,7 +323,8 @@ class _TopBadge extends StatelessWidget {
 // ─── Profile Card ─────────────────────────────────────────────────────────────
 class _ProfileCard extends StatelessWidget {
   final AnimationController slideCtrl;
-  const _ProfileCard({required this.slideCtrl});
+  final ValueChanged<int> onNavigate;
+  const _ProfileCard({required this.slideCtrl, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -401,9 +391,9 @@ class _ProfileCard extends StatelessWidget {
             _AttendanceMeter(76),
             const SizedBox(height: 28),
             // Quick action buttons
-            _ActionBtn(Icons.bar_chart_rounded, 'View Report', _rose),
+            _ActionBtn(Icons.bar_chart_rounded, 'View Report', _rose, onTap: () => onNavigate(1)),
             const SizedBox(height: 10),
-            _ActionBtn(Icons.psychology_outlined, 'Mind & Mood', _teal),
+            _ActionBtn(Icons.psychology_outlined, 'Mind & Mood', _teal, onTap: () => onNavigate(2)),
           ],
         ),
       ),
@@ -476,7 +466,8 @@ class _ActionBtn extends StatefulWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _ActionBtn(this.icon, this.label, this.color);
+  final VoidCallback onTap;
+  const _ActionBtn(this.icon, this.label, this.color, {required this.onTap});
 
   @override
   State<_ActionBtn> createState() => _ActionBtnState();
@@ -491,20 +482,23 @@ class _ActionBtnState extends State<_ActionBtn> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit:  (_) => setState(() => _hovered = false),
       cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 13),
-        decoration: BoxDecoration(
-          color: _hovered ? widget.color.withOpacity(0.2) : widget.color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: widget.color.withOpacity(_hovered ? 0.5 : 0.2)),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          decoration: BoxDecoration(
+            color: _hovered ? widget.color.withOpacity(0.2) : widget.color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: widget.color.withOpacity(_hovered ? 0.5 : 0.2)),
+          ),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(widget.icon, color: widget.color, size: 16),
+            const SizedBox(width: 8),
+            Text(widget.label, style: TextStyle(color: widget.color, fontSize: 13, fontWeight: FontWeight.w600)),
+          ]),
         ),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(widget.icon, color: widget.color, size: 16),
-          const SizedBox(width: 8),
-          Text(widget.label, style: TextStyle(color: widget.color, fontSize: 13, fontWeight: FontWeight.w600)),
-        ]),
       ),
     );
   }
@@ -513,7 +507,8 @@ class _ActionBtnState extends State<_ActionBtn> {
 // ─── Info Column ──────────────────────────────────────────────────────────────
 class _InfoColumn extends StatelessWidget {
   final AnimationController slideCtrl;
-  const _InfoColumn({required this.slideCtrl});
+  final ValueChanged<int> onNavigate;
+  const _InfoColumn({required this.slideCtrl, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -527,7 +522,7 @@ class _InfoColumn extends StatelessWidget {
           const SizedBox(height: 20),
           _StatsRow(),
           const SizedBox(height: 20),
-          _QuickNavCards(),
+          _QuickNavCards(onNavigate: onNavigate),
         ],
       ),
     );
@@ -657,6 +652,9 @@ class _StatCardState extends State<_StatCard> {
 
 // ─── Quick Navigation Cards ───────────────────────────────────────────────────
 class _QuickNavCards extends StatelessWidget {
+  final ValueChanged<int> onNavigate;
+  const _QuickNavCards({required this.onNavigate});
+
   @override
   Widget build(BuildContext context) {
     return Row(children: [
@@ -666,17 +664,7 @@ class _QuickNavCards extends StatelessWidget {
           title: 'View Full Report',
           subtitle: 'Academic · Attendance · Mental Health',
           color: _rose,
-          onTap: () {
-            //Navigate to report page
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportPage()));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('→ Navigating to report_page.dart'),
-                backgroundColor: Color(0xFF4E2A34),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onTap: () => onNavigate(1),
         ),
       ),
       const SizedBox(width: 16),
@@ -686,17 +674,7 @@ class _QuickNavCards extends StatelessWidget {
           title: 'My Mind & Mood',
           subtitle: 'Take a quiz · Explore patterns',
           color: _teal,
-          onTap: () {
-            // Navigate to quiz page
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const QuizStartPage()));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('→ Navigating to quiz_start_page.dart'),
-                backgroundColor: Color(0xFF1E3A38),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onTap: () => onNavigate(2),
         ),
       ),
     ]);
