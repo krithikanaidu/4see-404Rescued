@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'student_profile_page.dart';
 
 void main() {
   runApp(const QuizStartPage());
@@ -116,6 +117,30 @@ class _QuizStartScreenState extends State<QuizStartScreen>
     super.dispose();
   }
 
+  void _goToStudentProfile() {
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, animation, __) => const StudentProfilePage(),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(-0.08, 0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              ),
+              child: child,
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 350),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -156,6 +181,10 @@ class _QuizStartScreenState extends State<QuizStartScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // ── Back Button ──────────────────────────────
+                            _buildBackButton(),
+                            const SizedBox(height: 28),
+                            // ─────────────────────────────────────────────
                             _buildHeader(),
                             const SizedBox(height: 40),
                             _buildInfoCard(),
@@ -173,6 +202,67 @@ class _QuizStartScreenState extends State<QuizStartScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBackButton() {
+    bool _backHovered = false;
+
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setLocalState(() => _backHovered = true),
+          onExit: (_) => setLocalState(() => _backHovered = false),
+          child: GestureDetector(
+            onTap: _goToStudentProfile,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: _backHovered
+                    ? const Color(0xFF8B5E6B).withOpacity(0.2)
+                    : const Color(0xFF8B5E6B).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _backHovered
+                      ? const Color(0xFF8B5E6B).withOpacity(0.6)
+                      : const Color(0xFF8B5E6B).withOpacity(0.25),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedSlide(
+                    offset: _backHovered
+                        ? const Offset(-0.15, 0)
+                        : Offset.zero,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Color(0xFFD4A0AE),
+                      size: 15,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Student Profile',
+                    style: TextStyle(
+                      color: _backHovered
+                          ? const Color(0xFFE8C8D0)
+                          : const Color(0xFFD4A0AE),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -485,7 +575,8 @@ class _QuizStartScreenState extends State<QuizStartScreen>
               content: Text('Starting: ${category.title.replaceAll('\n', ' ')}'),
               backgroundColor: category.color,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           );
         },
@@ -512,7 +603,8 @@ class _QuizStartScreenState extends State<QuizStartScreen>
             ),
             boxShadow: [
               BoxShadow(
-                color: category.color.withOpacity(isHovered ? 0.5 : 0.2),
+                color:
+                    category.color.withOpacity(isHovered ? 0.5 : 0.2),
                 blurRadius: isHovered ? 30 : 15,
                 offset: const Offset(0, 8),
               ),
@@ -532,11 +624,7 @@ class _QuizStartScreenState extends State<QuizStartScreen>
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    category.icon,
-                    color: Colors.white,
-                    size: 28,
-                  ),
+                  child: Icon(category.icon, color: Colors.white, size: 28),
                 ),
 
                 // Text
@@ -556,9 +644,7 @@ class _QuizStartScreenState extends State<QuizStartScreen>
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
@@ -576,26 +662,24 @@ class _QuizStartScreenState extends State<QuizStartScreen>
                 ),
 
                 // Arrow
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(isHovered ? 0.3 : 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Colors.white.withOpacity(0.9),
-                          size: 18,
-                        ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white
+                            .withOpacity(isHovered ? 0.3 : 0.15),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    ],
-                  ),
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white.withOpacity(0.9),
+                        size: 18,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

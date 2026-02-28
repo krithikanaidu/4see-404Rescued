@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'role_selection_page.dart';
+import 'landing_page2.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -33,7 +33,7 @@ class LandingPage extends StatelessWidget {
                     // Navigate to Sign Up Page
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
+                      MaterialPageRoute(builder: (context) => const LandingPage2()),
                     );
                   },
                   style: ElevatedButton.styleFrom(

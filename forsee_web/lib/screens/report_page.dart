@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-//import 'shared_nav.dart';        // ← uncomment in your real project
-import 'student_profile_page.dart'; 
+import 'student_profile_page.dart';
 import 'quiz_start_page.dart';
 
 void main() {
@@ -24,7 +23,6 @@ class ReportApp extends StatelessWidget {
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
-// Aligned with shared_nav.dart palette
 const _rose     = Color(0xFFF2C4CE);
 const _roseDark = Color(0xFFD4899A);
 const _bg       = Color(0xFF2E1118);
@@ -105,17 +103,14 @@ class _ReportPageState extends State<ReportPage> with TickerProviderStateMixin {
     _fadeAnim.forward(from: 0);
   }
 
-  // Handle global nav: 1 = this page, 0 = Profile, 2 = My Mind & Mood
+  /// 0 = StudentProfilePage, 1 = ReportPage (current), 2 = QuizStartScreen
   void _handleNav(int index) {
-    if (index == 1) return;
+    if (index == 1) return; // already here
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => index == 0
-            ? const _NavPlaceholder('My Profile', 'student_profile_page.dart')
-            : const _NavPlaceholder('My Mind & Mood', 'quiz_start_page.dart'),
-        // In your real project:
-        // index == 0 ? const ProfilePage() : const QuizStartScreen()
+        pageBuilder: (_, __, ___) =>
+            index == 0 ? const StudentProfilePage() : const QuizStartScreen(),
         transitionDuration: const Duration(milliseconds: 300),
         transitionsBuilder: (_, anim, __, child) =>
             FadeTransition(opacity: anim, child: child),
@@ -138,9 +133,7 @@ class _ReportPageState extends State<ReportPage> with TickerProviderStateMixin {
       backgroundColor: _bg,
       body: Row(
         children: [
-          // Shared App Sidebar (nav index 1 = Report)
           _AppSideNav(currentIndex: 1, onNavigate: _handleNav),
-          // Right: sub-tab bar + content
           Expanded(
             child: Column(
               children: [
@@ -203,7 +196,7 @@ class _ReportPageState extends State<ReportPage> with TickerProviderStateMixin {
   }
 }
 
-// ─── Shared App Sidebar (identical nav across all 3 pages) ──────────────────
+// ─── Shared App Sidebar ──────────────────────────────────────────────────────
 
 class _AppSideNav extends StatelessWidget {
   final int currentIndex; // 0=Profile, 1=Report, 2=Mind&Mood
@@ -253,8 +246,10 @@ class _AppSideNav extends StatelessWidget {
                 width: 34, height: 34,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(colors: [Color(0xFF7A3A4A), Color(0xFF4A1F2C)],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7A3A4A), Color(0xFF4A1F2C)],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  ),
                   border: Border.all(color: _roseDark.withOpacity(0.4), width: 1.5),
                 ),
                 child: const Center(child: Text('DR', style: TextStyle(color: _rose, fontWeight: FontWeight.w900, fontSize: 11))),
@@ -287,6 +282,7 @@ class _SideNavItem extends StatefulWidget {
 
 class _SideNavItemState extends State<_SideNavItem> {
   bool _hovered = false;
+
   @override
   Widget build(BuildContext context) {
     final sel = widget.selected == widget.index;
@@ -323,55 +319,6 @@ class _SideNavItemState extends State<_SideNavItem> {
   }
 }
 
-// ─── Nav Placeholder (swap with real widgets) ─────────────────────────────────
-
-class _NavPlaceholder extends StatelessWidget {
-  final String title;
-  final String file;
-  const _NavPlaceholder(this.title, this.file);
-
-  @override
-  Widget build(BuildContext context) {
-    final navIdx = title.contains('Mind') ? 2 : title.contains('Profile') ? 0 : 1;
-    return Scaffold(
-      backgroundColor: _bg,
-      body: Row(children: [
-        _AppSideNav(
-          currentIndex: navIdx,
-          onNavigate: (i) => Navigator.pushReplacement(context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => i == 1
-                  ? const ReportPage()
-                  : _NavPlaceholder(
-                      i == 0 ? 'My Profile' : 'My Mind & Mood',
-                      i == 0 ? 'StudentProfilePage.dart' : 'QuizStartPage.dart'),
-              transitionDuration: const Duration(milliseconds: 300),
-              transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
-            ),
-          ),
-        ),
-        Expanded(child: Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: _roseDark.withOpacity(0.12), shape: BoxShape.circle,
-                border: Border.all(color: _roseDark.withOpacity(0.3), width: 2),
-              ),
-              child: Icon(
-                title.contains('Mind') ? Icons.psychology_outlined : Icons.person_outline_rounded,
-                color: _roseDark, size: 40),
-            ),
-            const SizedBox(height: 20),
-            Text(title, style: const TextStyle(color: _text, fontSize: 26, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 8),
-            Text('Replace with: import \'$file\'', style: const TextStyle(color: _textDim, fontSize: 13)),
-          ]),
-        )),
-      ]),
-    );
-  }
-}
 // ─── Top Bar ─────────────────────────────────────────────────────────────────
 
 class _TopBar extends StatelessWidget {
@@ -403,10 +350,10 @@ class _TopBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: sel ? _roseDark : _card.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: sel ? _roseDark : Colors.white.withOpacity(0.08),
-                    ),
-                    boxShadow: sel ? [BoxShadow(color: _roseDark.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))] : null,
+                    border: Border.all(color: sel ? _roseDark : Colors.white.withOpacity(0.08)),
+                    boxShadow: sel
+                        ? [BoxShadow(color: _roseDark.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))]
+                        : null,
                   ),
                   child: Text(
                     _labels[i],
@@ -527,8 +474,10 @@ class _MentalHealthCard extends StatelessWidget {
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(color: _green.withOpacity(0.15), borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _green.withOpacity(0.3))),
+              decoration: BoxDecoration(
+                color: _green.withOpacity(0.15), borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _green.withOpacity(0.3)),
+              ),
               child: const Text('Good', style: TextStyle(color: _green, fontSize: 12, fontWeight: FontWeight.w700)),
             ),
           ]),
@@ -555,7 +504,6 @@ class _MentalHealthCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 36),
-          // Sub metrics
           Row(children: [
             _MiniMetric('Focus', 0.78, _green),
             const SizedBox(width: 16),
@@ -617,11 +565,9 @@ class _ScorePainter extends CustomPainter {
     const strokeW = 18.0;
     final radius = (size.width - strokeW) / 2;
 
-    // Background ring
     canvas.drawCircle(center, radius,
       Paint()..color = Colors.white.withOpacity(0.06)..style = PaintingStyle.stroke..strokeWidth = strokeW..strokeCap = StrokeCap.round);
 
-    // Red arc (background portion)
     final bgPaint = Paint()
       ..color = _red.withOpacity(0.5)
       ..style = PaintingStyle.stroke
@@ -630,7 +576,6 @@ class _ScorePainter extends CustomPainter {
     canvas.drawArc(Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2, 2 * math.pi * (1 - progress), false, bgPaint);
 
-    // Green arc
     final fgPaint = Paint()
       ..color = _green
       ..style = PaintingStyle.stroke
@@ -673,7 +618,7 @@ class _BarChartCard extends StatelessWidget {
               Text(subtitle, style: const TextStyle(color: _textDim, fontSize: 12)),
             ]),
             const Spacer(),
-            Icon(Icons.arrow_forward, color: _textDim, size: 18),
+            const Icon(Icons.arrow_forward, color: _textDim, size: 18),
           ]),
           const SizedBox(height: 40),
           SizedBox(
@@ -688,16 +633,13 @@ class _BarChartCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          // Legend
-          Row(
-            children: [
-              _LegendDot(_green, 'Good (≥75%)'),
-              const SizedBox(width: 20),
-              _LegendDot(_roseDark, 'Average (50–74%)'),
-              const SizedBox(width: 20),
-              _LegendDot(_red, 'Needs Work (<50%)'),
-            ],
-          ),
+          Row(children: [
+            _LegendDot(_green, 'Good (≥75%)'),
+            const SizedBox(width: 20),
+            _LegendDot(_roseDark, 'Average (50–74%)'),
+            const SizedBox(width: 20),
+            _LegendDot(_red, 'Needs Work (<50%)'),
+          ]),
         ],
       ),
     );
@@ -741,10 +683,7 @@ class _BarColumn extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
-                colors: [
-                  bar.color,
-                  bar.color.withOpacity(0.5),
-                ],
+                colors: [bar.color, bar.color.withOpacity(0.5)],
               ),
               boxShadow: [BoxShadow(color: bar.color.withOpacity(0.35), blurRadius: 12, offset: const Offset(0, 4))],
             ),
@@ -806,7 +745,7 @@ class _InsightTileState extends State<_InsightTile> {
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
+      onExit:  (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.only(bottom: 12),
@@ -821,10 +760,7 @@ class _InsightTileState extends State<_InsightTile> {
           children: [
             Container(
               padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: _roseDark.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
+              decoration: BoxDecoration(color: _roseDark.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
               child: Icon(widget.insight.icon, color: _roseDark, size: 16),
             ),
             const SizedBox(width: 12),
@@ -836,7 +772,7 @@ class _InsightTileState extends State<_InsightTile> {
                     style: const TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Text(widget.insight.body,
-                    style: TextStyle(color: _textDim, fontSize: 12, height: 1.5)),
+                    style: const TextStyle(color: _textDim, fontSize: 12, height: 1.5)),
                 ],
               ),
             ),
