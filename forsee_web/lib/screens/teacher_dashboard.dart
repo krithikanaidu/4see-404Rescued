@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'classroom_page.dart';
+import 'add_classroom.dart'; // ← ADD THIS IMPORT
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -236,7 +237,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                   style: GoogleFonts.poppins(fontSize: 34, fontWeight: FontWeight.w800, height: 1.1),
                   children: [
                     const TextSpan(text: 'Rupali ', style: TextStyle(color: _text)),
-                    TextSpan(text: '👋', style: TextStyle(fontSize: 30)),
+                    const TextSpan(text: '👋', style: TextStyle(fontSize: 30)),
                   ],
                 ),
               ),
@@ -265,7 +266,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   Widget _buildAttentionCard() {
     final alerts = [
       _Alert(Icons.warning_amber_rounded, 'Riya Mehta', 'Attendance below 60% this month', _rose),
-      _Alert(Icons.trending_down_rounded, 'Arjun Shah', 'Quiz score dropped 18% from last week', Color(0xFFFFB347)),
+      _Alert(Icons.trending_down_rounded, 'Arjun Shah', 'Quiz score dropped 18% from last week', const Color(0xFFFFB347)),
       _Alert(Icons.psychology_outlined, 'Dhruv Patel', 'Mental health score flagged — follow up recommended', _teal),
     ];
 
@@ -359,7 +360,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   }
 
   // ─────────────────────────────────────────────────────────────
-  // MY CLASSROOMS
+  // MY CLASSROOMS  ← UPDATED: added + New Classroom button
   // ─────────────────────────────────────────────────────────────
   Widget _buildClassroomsSection() {
     final classrooms = [
@@ -376,8 +377,21 @@ class _TeacherDashboardState extends State<TeacherDashboard>
             Text('My Classrooms', style: GoogleFonts.poppins(
               fontSize: 22, fontWeight: FontWeight.w800, color: _text,
             )),
+            const SizedBox(width: 16),
+
+            // ── ✦ NEW: + Add Classroom Button ──
+            _AddClassroomButton(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddClassroomPage()),
+                );
+              },
+            ),
+
             const Spacer(),
-            // VIEW ALL BUTTON — same GestureDetector structure as original
+
+            // VIEW ALL button (unchanged)
             GestureDetector(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
@@ -398,7 +412,6 @@ class _TeacherDashboardState extends State<TeacherDashboard>
           children: classrooms.map((c) => Expanded(
             child: Padding(
               padding: EdgeInsets.only(right: classrooms.last == c ? 0 : 20),
-              // ── HOVERABLE CLASSROOM CARD (same navigation as original) ──
               child: HoverableClassroomCard(
                 color: _card,
                 title: c.name,
@@ -417,10 +430,9 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   // ─────────────────────────────────────────────────────────────
   Widget _buildCalendarCard() {
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    // Feb 2026 starts on Sunday (index 6 offset)
     const offset = 6;
     const totalDays = 28;
-    final highlighted = {3, 10, 17, 24}; // days with events
+    final highlighted = {3, 10, 17, 24};
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -443,7 +455,6 @@ class _TeacherDashboardState extends State<TeacherDashboard>
             ],
           ),
           const SizedBox(height: 16),
-          // Day headers
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: days.map((d) => SizedBox(
@@ -580,6 +591,83 @@ class _TeacherDashboardState extends State<TeacherDashboard>
 }
 
 // ─────────────────────────────────────────────────────────────
+// ✦ NEW: ADD CLASSROOM BUTTON WIDGET
+// ─────────────────────────────────────────────────────────────
+class _AddClassroomButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _AddClassroomButton({required this.onTap});
+
+  @override
+  State<_AddClassroomButton> createState() => _AddClassroomButtonState();
+}
+
+class _AddClassroomButtonState extends State<_AddClassroomButton> {
+  bool _hovered = false;
+
+  static const _rose      = Color(0xFFF2C4CE);
+  static const _roseMid   = Color(0xFFD4899A);
+  static const _card      = Color(0xFF321A24);
+  static const _cardHigh  = Color(0xFF3E2130);
+  static const _border    = Color(0xFF3D2030);
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: _hovered ? _cardHigh : _card,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: _hovered ? _roseMid.withOpacity(0.6) : _border,
+              width: 1.5,
+            ),
+            boxShadow: _hovered
+                ? [BoxShadow(color: _rose.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 4))]
+                : [],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: _hovered ? _roseMid : _roseMid.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.add_rounded,
+                  size: 14,
+                  color: _hovered ? const Color(0xFF1A0D10) : _roseMid,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'New Classroom',
+                style: GoogleFonts.poppins(
+                  color: _hovered ? _rose : _roseMid,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // DATA MODELS
 // ─────────────────────────────────────────────────────────────
 class _Alert {
@@ -615,9 +703,9 @@ class _QuickStat extends StatelessWidget {
 
   const _QuickStat({required this.label, required this.value, required this.icon, required this.color});
 
-  static const _bg   = Color(0xFF321A24);
-  static const _border = Color(0xFF3D2030);
-  static const _text = Color(0xFFF8EEF1);
+  static const _bg      = Color(0xFF321A24);
+  static const _border  = Color(0xFF3D2030);
+  static const _text    = Color(0xFFF8EEF1);
   static const _textDim = Color(0xFF8A6070);
 
   @override
@@ -669,10 +757,10 @@ class _IconBtn extends StatefulWidget {
 
 class _IconBtnState extends State<_IconBtn> {
   bool _hovered = false;
-  static const _card = Color(0xFF3E2130);
+  static const _card     = Color(0xFF3E2130);
   static const _cardHigh = Color(0xFF4E2A3C);
-  static const _textDim = Color(0xFF8A6070);
-  static const _text = Color(0xFFF8EEF1);
+  static const _textDim  = Color(0xFF8A6070);
+  static const _text     = Color(0xFFF8EEF1);
 
   @override
   Widget build(BuildContext context) {
@@ -688,7 +776,7 @@ class _IconBtnState extends State<_IconBtn> {
           decoration: BoxDecoration(
             color: _hovered ? _cardHigh : _card,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Color(0xFF3D2030)),
+            border: Border.all(color: const Color(0xFF3D2030)),
           ),
           child: Icon(widget.icon, color: _hovered ? _text : _textDim, size: 18),
         ),
@@ -699,7 +787,6 @@ class _IconBtnState extends State<_IconBtn> {
 
 // ─────────────────────────────────────────────────────────────
 // HOVERABLE CLASSROOM CARD
-// All redirections preserved exactly as original
 // ─────────────────────────────────────────────────────────────
 class HoverableClassroomCard extends StatefulWidget {
   final Color color;
@@ -738,7 +825,6 @@ class _HoverableClassroomCardState extends State<HoverableClassroomCard> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
-          // ── NAVIGATION PRESERVED AS-IS ──
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => widget.destination),
@@ -765,7 +851,6 @@ class _HoverableClassroomCardState extends State<HoverableClassroomCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row
               Row(
                 children: [
                   Container(
@@ -784,17 +869,12 @@ class _HoverableClassroomCardState extends State<HoverableClassroomCard> {
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Title
               Text(c.name, style: GoogleFonts.poppins(
                 fontSize: 18, fontWeight: FontWeight.w800, color: _text,
               )),
               const SizedBox(height: 4),
               Text(c.subject, style: GoogleFonts.poppins(color: _textDim, fontSize: 12)),
-
               const SizedBox(height: 20),
-
-              // Score bar
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
@@ -805,8 +885,6 @@ class _HoverableClassroomCardState extends State<HoverableClassroomCard> {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // Footer
               Row(
                 children: [
                   Icon(Icons.people_outline_rounded, color: _textDim, size: 14),

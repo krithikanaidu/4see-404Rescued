@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'student_pfp_page.dart';
 import 'teacher_dashboard.dart';
-import 'add_classroom.dart';
 
 void main() {
   runApp(const ForseeWebApp());
@@ -33,6 +32,7 @@ class _WebClassroomPageState extends State<WebClassroomPage>
   late AnimationController _slideUp;
   String _searchQuery = '';
 
+  // Brand palette — consistent with teacher_dashboard & report_page
   static const _bg       = Color(0xFF1A0D10);
   static const _surface  = Color(0xFF22111A);
   static const _card     = Color(0xFF2E1820);
@@ -93,7 +93,7 @@ class _WebClassroomPageState extends State<WebClassroomPage>
                         children: [
                           _buildClassroomHeader(),
                           const SizedBox(height: 32),
-                          _buildToolbar(context),
+                          _buildToolbar(),
                           const SizedBox(height: 28),
                           _buildStudentGrid(context),
                           const SizedBox(height: 36),
@@ -112,6 +112,9 @@ class _WebClassroomPageState extends State<WebClassroomPage>
     );
   }
 
+  // ─────────────────────────────────────────────
+  // TOP BAR
+  // ─────────────────────────────────────────────
   Widget _buildTopBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
@@ -121,6 +124,7 @@ class _WebClassroomPageState extends State<WebClassroomPage>
       ),
       child: Row(
         children: [
+          // Logo
           RichText(
             text: TextSpan(
               style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w900),
@@ -143,7 +147,8 @@ class _WebClassroomPageState extends State<WebClassroomPage>
             )),
           ),
           const SizedBox(width: 32),
-          // Back nav — PRESERVED
+
+          // Breadcrumb with back navigation — PRESERVED
           GestureDetector(
             onTap: () {
               Navigator.pushReplacement(
@@ -154,8 +159,10 @@ class _WebClassroomPageState extends State<WebClassroomPage>
                   transitionsBuilder: (_, anim, __, child) => FadeTransition(
                     opacity: anim,
                     child: SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(-0.06, 0), end: Offset.zero)
-                          .animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
+                      position: Tween<Offset>(
+                        begin: const Offset(-0.06, 0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
                       child: child,
                     ),
                   ),
@@ -178,7 +185,10 @@ class _WebClassroomPageState extends State<WebClassroomPage>
           Text('Science · STD 5th', style: GoogleFonts.poppins(
             color: _text, fontSize: 13, fontWeight: FontWeight.w600,
           )),
+
           const Spacer(),
+
+          // Session pill
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
@@ -191,6 +201,8 @@ class _WebClassroomPageState extends State<WebClassroomPage>
             ]),
           ),
           const SizedBox(width: 16),
+
+          // Notification bell
           Stack(clipBehavior: Clip.none, children: [
             Container(
               width: 38, height: 38,
@@ -203,6 +215,8 @@ class _WebClassroomPageState extends State<WebClassroomPage>
             )),
           ]),
           const SizedBox(width: 12),
+
+          // Avatar
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
@@ -219,6 +233,9 @@ class _WebClassroomPageState extends State<WebClassroomPage>
     );
   }
 
+  // ─────────────────────────────────────────────
+  // CLASSROOM HEADER CARD
+  // ─────────────────────────────────────────────
   Widget _buildClassroomHeader() {
     return SlideTransition(
       position: Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
@@ -242,6 +259,7 @@ class _WebClassroomPageState extends State<WebClassroomPage>
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Subject icon
             Container(
               width: 70, height: 70,
               decoration: BoxDecoration(
@@ -252,6 +270,8 @@ class _WebClassroomPageState extends State<WebClassroomPage>
               child: const Icon(Icons.science_rounded, color: _teal, size: 34),
             ),
             const SizedBox(width: 28),
+
+            // Title + chips
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,6 +290,8 @@ class _WebClassroomPageState extends State<WebClassroomPage>
                 ],
               ),
             ),
+
+            // Stats
             _HeaderStat('24', 'Participants', Icons.people_rounded, _teal),
             const SizedBox(width: 16),
             _HeaderStat('87%', 'Avg. Score', Icons.bar_chart_rounded, _green),
@@ -281,8 +303,10 @@ class _WebClassroomPageState extends State<WebClassroomPage>
     );
   }
 
-  // ── TOOLBAR with + Add Student button ──────────────────────
-  Widget _buildToolbar(BuildContext context) {
+  // ─────────────────────────────────────────────
+  // TOOLBAR
+  // ─────────────────────────────────────────────
+  Widget _buildToolbar() {
     return Row(
       children: [
         Text('Students', style: GoogleFonts.poppins(
@@ -298,31 +322,9 @@ class _WebClassroomPageState extends State<WebClassroomPage>
             color: _teal, fontSize: 12, fontWeight: FontWeight.w700,
           )),
         ),
-        const SizedBox(width: 14),
-
-        // ── + ADD STUDENT BUTTON → add_classroom.dart ──
-        _AddStudentBtn(
-          onTap: () => Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => const AddClassroomPage(),
-              transitionDuration: const Duration(milliseconds: 350),
-              transitionsBuilder: (_, anim, __, child) => FadeTransition(
-                opacity: anim,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0.05, 0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
-                  child: child,
-                ),
-              ),
-            ),
-          ),
-        ),
-        // ───────────────────────────────────────────────
-
         const Spacer(),
+
+        // Search
         Container(
           width: 250, height: 42,
           decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12), border: Border.all(color: _border)),
@@ -339,6 +341,8 @@ class _WebClassroomPageState extends State<WebClassroomPage>
           ),
         ),
         const SizedBox(width: 12),
+
+        // Upload Attendance — onTap: () {} PRESERVED
         _ToolbarBtn(label: 'Upload Attendance', icon: Icons.upload_rounded, color: _rose, onTap: () {}),
         const SizedBox(width: 12),
         _ToolbarBtn(label: 'Filter', icon: Icons.tune_rounded, color: _card, onTap: () {}, border: true),
@@ -346,6 +350,9 @@ class _WebClassroomPageState extends State<WebClassroomPage>
     );
   }
 
+  // ─────────────────────────────────────────────
+  // STUDENT GRID
+  // ─────────────────────────────────────────────
   Widget _buildStudentGrid(BuildContext context) {
     final list = _filtered;
     if (list.isEmpty) {
@@ -368,6 +375,7 @@ class _WebClassroomPageState extends State<WebClassroomPage>
       itemCount: list.length,
       itemBuilder: (ctx, i) => _StudentCard(
         student: list[i],
+        // ── NAVIGATION PRESERVED AS-IS ──
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => StudentPfpPage(studentName: list[i].name)),
@@ -376,13 +384,16 @@ class _WebClassroomPageState extends State<WebClassroomPage>
     );
   }
 
+  // ─────────────────────────────────────────────
+  // UPLOAD MARKS BUTTON
+  // ─────────────────────────────────────────────
   Widget _buildUploadMarksButton() {
     return Center(
       child: _ToolbarBtn(
         label: 'Upload Marks',
         icon: Icons.assessment_rounded,
         color: _teal,
-        onTap: () {},
+        onTap: () {},   // PRESERVED
         wide: true,
       ),
     );
@@ -396,75 +407,6 @@ class _Student {
   final String name, roll, statusLabel;
   final Color statusColor;
   const _Student(this.name, this.roll, this.statusColor, this.statusLabel);
-}
-
-// ─────────────────────────────────────────────
-// + ADD STUDENT BUTTON
-// ─────────────────────────────────────────────
-class _AddStudentBtn extends StatefulWidget {
-  final VoidCallback onTap;
-  const _AddStudentBtn({required this.onTap});
-
-  @override
-  State<_AddStudentBtn> createState() => _AddStudentBtnState();
-}
-
-class _AddStudentBtnState extends State<_AddStudentBtn> {
-  bool _hovered = false;
-  static const _teal = Color(0xFF7ECECA);
-  static const _bg   = Color(0xFF1A0D10);
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit:  (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-          decoration: BoxDecoration(
-            color: _hovered ? _teal : _teal.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _hovered ? _teal : _teal.withOpacity(0.4),
-              width: 1.5,
-            ),
-            boxShadow: _hovered
-                ? [BoxShadow(color: _teal.withOpacity(0.3), blurRadius: 14, offset: const Offset(0, 4))]
-                : [],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Circle plus icon
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 20, height: 20,
-                decoration: BoxDecoration(
-                  color: _hovered ? _bg.withOpacity(0.15) : _teal.withOpacity(0.25),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.add_rounded, color: _hovered ? _bg : _teal, size: 14),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Add Student',
-                style: TextStyle(
-                  color: _hovered ? _bg : _teal,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -516,6 +458,7 @@ class _StudentCardState extends State<_StudentCard> {
         ),
         child: Row(
           children: [
+            // Avatar circle with initial
             Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
@@ -529,17 +472,23 @@ class _StudentCardState extends State<_StudentCard> {
               )),
             ),
             const SizedBox(width: 16),
+
+            // Name + roll
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(s.name, style: GoogleFonts.poppins(color: _text, fontSize: 15, fontWeight: FontWeight.w700)),
+                  Text(s.name, style: GoogleFonts.poppins(
+                    color: _text, fontSize: 15, fontWeight: FontWeight.w700,
+                  )),
                   const SizedBox(height: 3),
                   Text(s.roll, style: GoogleFonts.poppins(color: _textDim, fontSize: 12)),
                 ],
               ),
             ),
+
+            // Status badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
@@ -556,6 +505,7 @@ class _StudentCardState extends State<_StudentCard> {
               ]),
             ),
             const SizedBox(width: 14),
+
             // Arrow — NAVIGATION PRESERVED
             GestureDetector(
               onTap: widget.onTap,
