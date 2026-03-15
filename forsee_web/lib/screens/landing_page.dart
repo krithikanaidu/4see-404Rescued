@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'landing_page2.dart';
+import 'package:go_router/go_router.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -30,11 +30,8 @@ class LandingPage extends StatelessWidget {
                 height: 55,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to Sign Up Page
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LandingPage2()),
-                    );
+                    // Navigate to Login Page using GoRouter
+                    context.push('/login');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF8C4D8), // Pink

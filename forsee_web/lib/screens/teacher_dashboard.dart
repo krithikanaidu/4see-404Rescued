@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'classroom_page.dart';
-import 'add_classroom.dart'; // ← ADD THIS IMPORT
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../controllers/auth_controller.dart';
+import '../widgets/shared_widgets.dart';
+import '../services/classroom_service.dart';
+import '../models/student_model.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -15,17 +20,19 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   late AnimationController _fadeIn;
   late AnimationController _slideUp;
   int _activeNav = 0;
-  int _selectedDay = 27; // today highlighted
+  int _selectedDay = DateTime.now().day; // today highlighted
+  bool _showAll = false;
 
   // Brand palette
   static const _bg        = Color(0xFF1A0D10);
-  static const _surface   = Color(0xFF2A1520);
-  static const _card      = Color(0xFF321A24);
-  static const _cardHigh  = Color(0xFF3E2130);
+  static const _surface   = Color(0xFF22111A);
+  static const _card      = Color(0xFF2E1820);
   static const _rose      = Color(0xFFF2C4CE);
   static const _roseMid   = Color(0xFFD4899A);
   static const _teal      = Color(0xFF7ECECA);
   static const _green     = Color(0xFF7BC67E);
+  static const _red       = Color(0xFFE07070);
+  static const _amber     = Color(0xFFFFB347);
   static const _text      = Color(0xFFF8EEF1);
   static const _textDim   = Color(0xFF8A6070);
   static const _border    = Color(0xFF3D2030);
@@ -46,52 +53,77 @@ class _TeacherDashboardState extends State<TeacherDashboard>
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthController>(context);
+    final userName = auth.currentUser?.name.split(' ').first ?? 'Teacher';
+
     return Scaffold(
       backgroundColor: _bg,
-      body: FadeTransition(
-        opacity: _fadeIn,
-        child: SingleChildScrollView(
-          child: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 1440),
-              child: Column(
-                children: [
-                  _buildTopNav(),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(40, 32, 40, 48),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── LEFT MAIN COLUMN ──
-                        Expanded(
-                          flex: 7,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildGreetingBanner(),
-                              const SizedBox(height: 28),
-                              _buildAttentionCard(),
-                              const SizedBox(height: 36),
-                              _buildClassroomsSection(),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 32),
-                        // ── RIGHT SIDE COLUMN ──
-                        SizedBox(
-                          width: 300,
-                          child: Column(
-                            children: [
-                              _buildCalendarCard(),
-                              const SizedBox(height: 24),
-                              _buildRecentActivities(),
-                            ],
-                          ),
-                        ),
-                      ],
+      body: LoadingOverlay(
+        isLoading: auth.isLoading,
+        child: FadeTransition(
+          opacity: _fadeIn,
+          child: SingleChildScrollView(
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1440),
+                child: Column(
+                  children: [
+                    _buildTopNav(userName, auth),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(40, 32, 40, 48),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isWide = constraints.maxWidth > 1000;
+                          return isWide 
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // ── LEFT MAIN COLUMN ──
+                                  Expanded(
+                                    flex: 7,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildGreetingBanner(userName, auth),
+                                        const SizedBox(height: 28),
+                                        _buildAttentionCard(),
+                                        const SizedBox(height: 36),
+                                        _buildClassroomsSection(),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 32),
+                                  // ── RIGHT SIDE COLUMN ──
+                                  SizedBox(
+                                    width: 300,
+                                    child: Column(
+                                      children: [
+                                        _buildCalendarCard(),
+                                        const SizedBox(height: 24),
+                                        _buildRecentActivities(),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                children: [
+                                  _buildGreetingBanner(userName, auth),
+                                  const SizedBox(height: 28),
+                                  _buildAttentionCard(),
+                                  const SizedBox(height: 36),
+                                  _buildClassroomsSection(),
+                                  const SizedBox(height: 36),
+                                  _buildCalendarCard(), // Moved below on mobile
+                                  const SizedBox(height: 24),
+                                  _buildRecentActivities(),
+                                ],
+                              );
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -103,7 +135,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   // ─────────────────────────────────────────────────────────────
   // TOP NAV
   // ─────────────────────────────────────────────────────────────
-  Widget _buildTopNav() {
+  Widget _buildTopNav(String userName, AuthController auth) {
     final navItems = ['Dashboard', 'Classrooms', 'Students', 'Reports'];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 0),
@@ -132,7 +164,14 @@ class _TeacherDashboardState extends State<TeacherDashboard>
           ...navItems.asMap().entries.map((e) {
             final isActive = _activeNav == e.key;
             return GestureDetector(
-              onTap: () => setState(() => _activeNav = e.key),
+              onTap: () {
+                setState(() => _activeNav = e.key);
+                if (e.value == 'Classrooms') {
+                  context.push('/teacher/classroom');
+                } else if (e.value == 'Reports') {
+                  context.push('/student/report'); // Mock for now
+                }
+              },
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: AnimatedContainer(
@@ -174,36 +213,27 @@ class _TeacherDashboardState extends State<TeacherDashboard>
             child: Row(
               children: [
                 Text(
-                  'Welcome, Rupali!',
+                  'Welcome, $userName!',
                   style: GoogleFonts.poppins(color: _text, fontSize: 13, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(width: 14),
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_outlined, color: _textDim, size: 20),
-                    Positioned(
-                      top: -2, right: -2,
-                      child: Container(
-                        width: 7, height: 7,
-                        decoration: const BoxDecoration(color: _teal, shape: BoxShape.circle),
-                      ),
-                    ),
-                  ],
-                ),
+                _buildLogout(auth),
                 const SizedBox(width: 14),
-                Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [_roseMid, Color(0xFF8B2240)],
-                      begin: Alignment.topLeft, end: Alignment.bottomRight,
+                GestureDetector(
+                  onTap: () => context.push('/teacher/profile'),
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: [_roseMid, Color(0xFF8B2240)],
+                        begin: Alignment.topLeft, end: Alignment.bottomRight,
+                      ),
+                      border: Border.all(color: _rose.withOpacity(0.3), width: 1.5),
                     ),
-                    border: Border.all(color: _rose.withOpacity(0.3), width: 1.5),
-                  ),
-                  child: Center(
-                    child: Text('R', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                    child: Center(
+                      child: Text(userName[0], style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                    ),
                   ),
                 ),
               ],
@@ -214,10 +244,21 @@ class _TeacherDashboardState extends State<TeacherDashboard>
     );
   }
 
+  Widget _buildLogout(AuthController auth) {
+    return GestureDetector(
+      onTap: () => auth.logout(),
+      child: const MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Icon(Icons.logout_rounded, color: _textDim, size: 20),
+      ),
+    );
+  }
+
+
   // ─────────────────────────────────────────────────────────────
   // GREETING BANNER
   // ─────────────────────────────────────────────────────────────
-  Widget _buildGreetingBanner() {
+  Widget _buildGreetingBanner(String userName, AuthController auth) {
     return SlideTransition(
       position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
           .animate(CurvedAnimation(parent: _slideUp, curve: Curves.easeOutCubic)),
@@ -236,15 +277,15 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                 text: TextSpan(
                   style: GoogleFonts.poppins(fontSize: 34, fontWeight: FontWeight.w800, height: 1.1),
                   children: [
-                    const TextSpan(text: 'Rupali ', style: TextStyle(color: _text)),
+                    TextSpan(text: '$userName ', style: const TextStyle(color: _text)),
                     const TextSpan(text: '👋', style: TextStyle(fontSize: 30)),
                   ],
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                'Saturday, 28 Feb 2026  ·  3 classes today',
-                style: GoogleFonts.poppins(color: _textDim, fontSize: 13),
+                '${DateTime.now().day} Mar 2026  ·  UID: ${auth.currentUser?.uid ?? "Unknown"}',
+                style: GoogleFonts.poppins(color: _roseMid, fontSize: 11, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -264,98 +305,114 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   // ATTENTION CARD
   // ─────────────────────────────────────────────────────────────
   Widget _buildAttentionCard() {
-    final alerts = [
-      _Alert(Icons.warning_amber_rounded, 'Riya Mehta', 'Attendance below 60% this month', _rose),
-      _Alert(Icons.trending_down_rounded, 'Arjun Shah', 'Quiz score dropped 18% from last week', const Color(0xFFFFB347)),
-      _Alert(Icons.psychology_outlined, 'Dhruv Patel', 'Mental health score flagged — follow up recommended', _teal),
-    ];
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('students')
+          .where('riskLevel', isEqualTo: 'high')
+          .limit(3)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final docs = snapshot.data?.docs ?? [];
+        final students = docs.map((doc) => StudentModel.fromFirestore(doc)).toList();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 20, offset: const Offset(0, 6))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: _card,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: _border),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 20, offset: const Offset(0, 6))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _rose.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.notifications_active_rounded, color: _rose, size: 20),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _rose.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.notifications_active_rounded, color: _rose, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('ATTENTION', style: GoogleFonts.poppins(
+                    fontSize: 15, fontWeight: FontWeight.w800, color: _text, letterSpacing: 1.5,
+                  )),
+                  Container(
+                    margin: const EdgeInsets.only(left: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: _rose.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: _rose.withOpacity(0.3)),
+                    ),
+                    child: Text('${students.length} alerts', style: GoogleFonts.poppins(
+                      color: _rose, fontSize: 11, fontWeight: FontWeight.w600,
+                    )),
+                  ),
+                  const Spacer(),
+                  _IconBtn(icon: Icons.refresh_rounded, onTap: () => setState(() {})),
+                  const SizedBox(width: 8),
+                  _IconBtn(icon: Icons.tune_rounded, onTap: () {}),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text('ATTENTION', style: GoogleFonts.poppins(
-                fontSize: 15, fontWeight: FontWeight.w800, color: _text, letterSpacing: 1.5,
-              )),
-              Container(
-                margin: const EdgeInsets.only(left: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _rose.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _rose.withOpacity(0.3)),
+              const SizedBox(height: 24),
+              if (students.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: Text('No high-risk students detected at this time.', 
+                      style: GoogleFonts.poppins(color: _textDim, fontSize: 13)),
+                  ),
+                )
+              else
+                Row(
+                  children: students.map((s) => Expanded(
+                    child: Container(
+                      margin: EdgeInsets.only(right: students.last == s ? 0 : 16),
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: _red.withOpacity(0.07),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: _red.withOpacity(0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, color: _red, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(s.name, style: GoogleFonts.poppins(
+                                  color: _text, fontSize: 13, fontWeight: FontWeight.w700,
+                                )),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text('Dropout Probability: ${(s.attendance < 0.7 ? 85 : 42)}%', style: GoogleFonts.poppins(
+                            color: _textDim, fontSize: 12, height: 1.5,
+                          )),
+                          const SizedBox(height: 12),
+                          InkWell(
+                            onTap: () => context.push('/student/profile/${s.name}'),
+                            child: Text('View profile →', style: GoogleFonts.poppins(
+                              color: _red, fontSize: 11, fontWeight: FontWeight.w600,
+                            )),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )).toList(),
                 ),
-                child: Text('${alerts.length} alerts', style: GoogleFonts.poppins(
-                  color: _rose, fontSize: 11, fontWeight: FontWeight.w600,
-                )),
-              ),
-              const Spacer(),
-              _IconBtn(icon: Icons.refresh_rounded, onTap: () {}),
-              const SizedBox(width: 8),
-              _IconBtn(icon: Icons.tune_rounded, onTap: () {}),
             ],
           ),
-          const SizedBox(height: 24),
-          Row(
-            children: alerts.map((a) => Expanded(
-              child: Container(
-                margin: EdgeInsets.only(right: alerts.last == a ? 0 : 16),
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: a.color.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: a.color.withOpacity(0.2)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(a.icon, color: a.color, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(a.name, style: GoogleFonts.poppins(
-                            color: _text, fontSize: 13, fontWeight: FontWeight.w700,
-                          )),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(a.message, style: GoogleFonts.poppins(
-                      color: _textDim, fontSize: 12, height: 1.5,
-                    )),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      child: Text('View profile →', style: GoogleFonts.poppins(
-                        color: a.color, fontSize: 11, fontWeight: FontWeight.w600,
-                      )),
-                    ),
-                  ],
-                ),
-              ),
-            )).toList(),
-          ),
-        ],
-      ),
+        );
+      }
     );
   }
 
@@ -363,11 +420,8 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   // MY CLASSROOMS  ← UPDATED: added + New Classroom button
   // ─────────────────────────────────────────────────────────────
   Widget _buildClassroomsSection() {
-    final classrooms = [
-      _ClassroomInfo('Class X A', 'Mathematics', 28, 0.82, _teal),
-      _ClassroomInfo('Class IX B', 'Science', 31, 0.67, _rose),
-      _ClassroomInfo('Class XI C', 'Computer Science', 25, 0.91, _green),
-    ];
+    final auth = Provider.of<AuthController>(context, listen: false);
+    final service = ClassroomService();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,48 +432,88 @@ class _TeacherDashboardState extends State<TeacherDashboard>
               fontSize: 22, fontWeight: FontWeight.w800, color: _text,
             )),
             const SizedBox(width: 16),
-
-            // ── ✦ NEW: + Add Classroom Button ──
             _AddClassroomButton(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddClassroomPage()),
-                );
-              },
+              onTap: () => context.push('/teacher/add-classroom'),
             ),
-
             const Spacer(),
-
-            // VIEW ALL button (unchanged)
             GestureDetector(
+              onTap: () => setState(() => _showAll = !_showAll),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
                 decoration: BoxDecoration(
-                  color: _teal,
+                  color: _showAll ? _teal : _card,
                   borderRadius: BorderRadius.circular(30),
-                  boxShadow: [BoxShadow(color: _teal.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                  border: _showAll ? null : Border.all(color: _border),
+                  boxShadow: _showAll ? [BoxShadow(color: _teal.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))] : null,
                 ),
-                child: Text('View all classrooms', style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w700, color: const Color(0xFF1A0D10), fontSize: 13,
+                child: Text(_showAll ? 'Showing All' : 'View all classrooms', style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700, color: _showAll ? const Color(0xFF1A0D10) : _textDim, fontSize: 13,
                 )),
               ),
             ),
           ],
         ),
         const SizedBox(height: 20),
-        Row(
-          children: classrooms.map((c) => Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(right: classrooms.last == c ? 0 : 20),
-              child: HoverableClassroomCard(
-                color: _card,
-                title: c.name,
-                destination: const WebClassroomPage(),
-                classroomInfo: c,
+        StreamBuilder<QuerySnapshot>(
+          stream: service.getTeacherClassrooms(auth.currentUser?.uid ?? '', all: _showAll),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final docs = snapshot.data?.docs ?? [];
+            if (docs.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(40),
+                decoration: BoxDecoration(
+                  color: _card,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _border),
+                ),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.class_outlined, color: _textDim, size: 48),
+                      const SizedBox(height: 16),
+                      Text('No classrooms found', style: GoogleFonts.poppins(color: _textDim, fontSize: 16)),
+                      const SizedBox(height: 8),
+                      Text('Create your first classroom to get started', style: GoogleFonts.poppins(color: _textDim.withOpacity(0.6), fontSize: 13)),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 320,
+                mainAxisExtent: 240,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
               ),
-            ),
-          )).toList(),
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final doc = docs[index];
+                final d = doc.data() as Map<String, dynamic>;
+                final studentCount = (d['studentIds'] as List?)?.length ?? (d['studentCount'] as num?)?.toInt() ?? 0;
+                final info = _ClassroomInfo(
+                  doc.id,
+                  d['title'] ?? d['name'] ?? 'Untitled',
+                  '${d['std'] ?? d['standard'] ?? ""} · ${d['subject'] ?? ""}',
+                  studentCount,
+                  0.75, // Placeholder
+                  index % 2 == 0 ? _teal : _rose,
+                );
+                return HoverableClassroomCard(
+                  color: _card,
+                  title: info.name,
+                  classroomInfo: info,
+                );
+              },
+            );
+          },
         ),
       ],
     );
@@ -670,13 +764,6 @@ class _AddClassroomButtonState extends State<_AddClassroomButton> {
 // ─────────────────────────────────────────────────────────────
 // DATA MODELS
 // ─────────────────────────────────────────────────────────────
-class _Alert {
-  final IconData icon;
-  final String name;
-  final String message;
-  final Color color;
-  const _Alert(this.icon, this.name, this.message, this.color);
-}
 
 class _Activity {
   final String title, subtitle, time;
@@ -686,11 +773,11 @@ class _Activity {
 }
 
 class _ClassroomInfo {
-  final String name, subject;
+  final String id, name, subject;
   final int students;
   final double score;
   final Color accent;
-  const _ClassroomInfo(this.name, this.subject, this.students, this.score, this.accent);
+  const _ClassroomInfo(this.id, this.name, this.subject, this.students, this.score, this.accent);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -791,14 +878,12 @@ class _IconBtnState extends State<_IconBtn> {
 class HoverableClassroomCard extends StatefulWidget {
   final Color color;
   final String title;
-  final Widget destination;
   final _ClassroomInfo classroomInfo;
 
   const HoverableClassroomCard({
     super.key,
     required this.color,
     required this.title,
-    required this.destination,
     required this.classroomInfo,
   });
 
@@ -824,12 +909,7 @@ class _HoverableClassroomCardState extends State<HoverableClassroomCard> {
       onExit: (_) => setState(() => isHovered = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => widget.destination),
-          );
-        },
+        onTap: () => context.push('/teacher/classroom/${c.id}'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           transform: Matrix4.translationValues(0, isHovered ? -8 : 0, 0),

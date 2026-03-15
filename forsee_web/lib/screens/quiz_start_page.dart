@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'report_page.dart';
+import 'student_pfp_page.dart';
 import 'student_profile_page.dart';
-
-void main() {
-  runApp(const QuizStartPage());
-}
 
 class QuizStartPage extends StatelessWidget {
   final bool showSidebar;
@@ -12,15 +10,7 @@ class QuizStartPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'My Mind & Mood',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        fontFamily: 'Georgia',
-      ),
-      home: QuizStartScreen(showSidebar: showSidebar),
-    );
+    return QuizStartScreen(showSidebar: showSidebar);
   }
 }
 

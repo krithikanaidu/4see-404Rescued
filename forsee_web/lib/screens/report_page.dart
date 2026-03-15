@@ -1,26 +1,15 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 //import 'shared_nav.dart';        // ← uncomment in your real project
-import 'student_profile_page.dart'; 
+import 'student_pfp_page.dart'; 
 import 'quiz_start_page.dart';
+import 'student_profile_page.dart';
 
-void main() {
-  runApp(const ReportApp());
-}
+// The main function and ReportApp (MaterialApp wrapper) are removed.
+// The GoRouter setup will be handled externally, making ReportPage a direct widget.
 
-class ReportApp extends StatelessWidget {
-  const ReportApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Student Report — Dhruv Rathee',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
-      home: const ReportPage(),
-    );
-  }
-}
+// class ReportPage removed here due to duplicate definition below
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -114,7 +103,7 @@ class _ReportPageState extends State<ReportPage> with TickerProviderStateMixin {
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => index == 0
             ? const StudentProfilePage()
-            : const QuizStartPage(),
+            : const QuizStartPage(showSidebar: false),
         // In your real project:
         // index == 0 ? const ProfilePage() : const QuizStartScreen()
         transitionDuration: const Duration(milliseconds: 300),
@@ -549,7 +538,7 @@ class _MentalHealthCard extends StatelessWidget {
                         '${(anim.value * 84).toInt()}%',
                         style: const TextStyle(color: _text, fontSize: 44, fontWeight: FontWeight.w900, letterSpacing: -2),
                       ),
-                      const Text('of 100', style: TextStyle(color: _textDim, fontSize: 13)),
+                      Text('of 100', style: TextStyle(color: _textDim, fontSize: 13)),
                     ]),
                   ),
                 ),

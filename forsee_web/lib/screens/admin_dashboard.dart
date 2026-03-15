@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../controllers/auth_controller.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -219,6 +221,38 @@ class _AdminDashboardState extends State<AdminDashboard>
                   ],
                 ),
               ],
+            ),
+          ),
+          // Logout Button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Consumer<AuthController>(
+              builder: (context, auth, _) => InkWell(
+                onTap: () => auth.logout(),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: _raspberry.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _raspberry.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.logout_rounded, color: _raspberry, size: 20),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Logout',
+                        style: GoogleFonts.poppins(
+                          color: _raspberry,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),

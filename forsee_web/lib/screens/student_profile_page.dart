@@ -1,25 +1,17 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-
-// ── Import your other pages like this in your real project:
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../controllers/auth_controller.dart';
 import 'report_page.dart';
 import 'quiz_start_page.dart';
-
-void main() {
-  runApp(const StudentProfilePage());
-}
 
 class StudentProfilePage extends StatelessWidget {
   const StudentProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '4see — Profile',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
-      home: const ProfilePage(),
-    );
+    return const ProfilePage();
   }
 }
 
@@ -160,14 +152,31 @@ class _SideNav extends StatelessWidget {
             child: Row(children: [
               _Avatar(size: 36),
               const SizedBox(width: 10),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Rohan Sharma', style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w700)),
-                const Text('Class X A', style: TextStyle(color: _textDim, fontSize: 11)),
-              ]),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Rohan Sharma', style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w700)),
+                  const Text('Class X A', style: TextStyle(color: _textDim, fontSize: 11)),
+                ]),
+              ),
+              _LogoutBtn(),
             ]),
           ),
           const SizedBox(height: 8),
         ],
+      ),
+    );
+  }
+}
+
+class _LogoutBtn extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthController>(
+      builder: (context, auth, _) => IconButton(
+        onPressed: () => auth.logout(),
+        icon: const Icon(Icons.logout_rounded, color: Color(0xFFD4899A), size: 20),
+        tooltip: 'Logout',
+        splashRadius: 20,
       ),
     );
   }

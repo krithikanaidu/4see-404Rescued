@@ -1,29 +1,10 @@
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const AddClassroomPage());
-}
-
-class AddClassroomPage extends StatelessWidget {
-  const AddClassroomPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'New Classroom',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.dark(
-          background: const Color(0xFF1A0A12),
-          surface: const Color(0xFF2D1221),
-          primary: const Color(0xFFC4547A),
-        ),
-        useMaterial3: true,
-      ),
-      home: const NewClassroomPage(),
-    );
-  }
-}
+import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../controllers/auth_controller.dart';
+import '../services/classroom_service.dart';
+import '../widgets/shared_widgets.dart';
 
 class NewClassroomPage extends StatefulWidget {
   const NewClassroomPage({super.key});
@@ -37,6 +18,7 @@ class _NewClassroomPageState extends State<NewClassroomPage>
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _subjectController = TextEditingController();
+  final _classroomService = ClassroomService();
 
   String _selectedStandard = 'STD 9th';
   String _selectedSemester = 'Semester I';
@@ -95,19 +77,36 @@ class _NewClassroomPageState extends State<NewClassroomPage>
   void _createClassroom() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Classroom created successfully!'),
-            backgroundColor: accentColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+      final auth = Provider.of<AuthController>(context, listen: false);
+      final teacherId = auth.currentUser?.uid ?? '';
+      
+      try {
+        await _classroomService.createClassroom(
+          name: _titleController.text,
+          subject: _subjectController.text,
+          teacherId: teacherId,
         );
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Classroom created successfully!'),
+              backgroundColor: accentColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+          context.pop(); // Go back using GoRouter
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+          );
+        }
       }
     }
   }
@@ -172,7 +171,7 @@ class _NewClassroomPageState extends State<NewClassroomPage>
                       children: [
                         // Back button
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => context.pop(),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
